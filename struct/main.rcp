@@ -1,0 +1,35 @@
+c = gcc
+carg = -Wall -g -shared -fPIC -DPIC -lczmq -lzmq -lpam -lpam_misc
+src = ../src
+# construction site:
+site = site
+#csrc = ${src}/pam/pam.c ${src}/pam.exo.c ${src}/pam_pass.c ${src}/pam_service.c ${src}/pam_std_option.c
+obj =  ${site}/pam/pam.obj ${site}/pam.exo.obj ${site}/pam_pass.obj ${site}/pam_service.obj ${site}/pam_std_option.obj
+result = ${site}/pam_exo.so
+
+all: ${result}
+${result}: ${obj}
+	${c} ${carg} -o ${result} ${obj}
+${site}/pam.exo.obj: ${src}/pam.exo.h ${src}/pam.exo.c
+	${c} ${carg} -c -o ${site}/pam.exo.obj ${src}/pam.exo.c
+${site}/pam/pam.obj: ${src}/pam/pam.c
+	${c} ${carg} -c -o ${site}/pam/pam.obj ${src}/pam/pam.c
+${site}/pam_pass.obj: ${src}/pam_pass.h ${src}/pam_pass.c
+	${c} ${carg} -c -o ${site}/pam_pass.obj ${src}/pam_pass.c
+${site}/pam_service.obj: ${src}/pam_service.h ${src}/pam_service.c
+	${c} ${carg} -c -o ${site}/pam_service.obj ${src}/pam_service.c
+${site}/pam_std_option.obj: ${src}/pam_std_option.h ${src}/pam_std_option.c
+	${c} ${carg} -c -o ${site}/pam_std_option.obj ${src}/pam_std_option.c
+${site}/test.obj: ${src}/test.c
+	${c} -Wall -g -shared -fPIC -DPIC -Wall -D_GNU_SOURCE -c -o ${site}/test.obj ${src}/test.c -lpam -lpam_misc
+test.elf: ${site}/test.obj
+	${c} -Wall -g -fPIC -DPIC -Wall -D_GNU_SOURCE -o ${site}/test.elf ${site}/test.obj -lpam -lpam_misc
+test: ${src}/test.c
+	${c} -Wall -g -fPIC -DPIC -Wall -D_GNU_SOURCE -o ${site}/test.elf ${src}/test.c -lpam -lpam_misc
+
+install: ${result}
+	cp ${result} /lib/security/
+uninstall:
+	rm --force /lib/security/pam_exo.so
+clean:
+	rm --force ${result} ${obj}

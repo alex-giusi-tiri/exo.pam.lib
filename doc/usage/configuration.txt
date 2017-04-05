@@ -1,0 +1,70 @@
+This file explains post compilation steps. It assumes that "nss-exo"
+is compiled and that it exists in the system libraries directory (/lib).
+
+
+ 1. Create handler/listener
+----------------------------
+
+"nss-exo" uses an external delegated handler/listener to provide authentication services.
+
+Thus, the first thing that it is needed is at least one such handler.
+
+One example, implemented in PHP, is provided, as well as its SQLite backend database, and some example data.
+
+The expected location for the default handler is "/etc/nss/exo/handler".
+The expected location for the PHP handler is "/etc/nss/exo/handler.php".
+The expected location for the SQLite database is "/etc/system.db".
+
+The handler should output an XML formatted string when called.
+User-friendly example data files "user.xml" and "group.xml" are provided in the "Configuration/" folder.
+The format is fixed, except for the equivalent shadowed user section:
+	In "user.xml", the section "/xml/user/authentication/password/crypted" should be present (only) when "shadow" is requested as the argument.
+	The section can be provided when the argument is not "shadow", as it is not needed, being ignored.
+Note that the spacing is important in the output: any new line is included in the interpretation, so try to keep those absent.
+
+The accepted calling arguments are:
+	Get user information:
+		(e.g.: getent passwd <user name>)
+			./handler (user|password|passwd) get (id|name) <value for the ID or the name>
+	Get shadowed user information:
+		(e.g.: getent shadow <user name>)
+			./handler shadow get name <value for the name (user name)>
+	Get group information:
+		(e.g.: getent group <group name>)
+			./handler group get (id|name) <value for the ID or the name>
+	Get all member groups for the specified user name:
+			./handler groups get name <value for the name>
+
+	Please note that these arguments can change in incompatible ways in the future!
+
+
+ 2. Configure nsswitch.conf
+----------------------------
+
+The second step is to tell glibc that we use this lib. Open /etc/nsswitch.conf
+and add "exo" on the lines which you want to use the software for.
+The currently supported Name Service Switch services are passwd, group, and shadow.
+You should obtain something like this:
+
+...
+passwd:		... exo ...
+group:		... exo ...
+shadow:		... exo ...
+...
+
+ 3. Test
+---------
+
+Insert some additional records in the SQLite DB tables (optional), open a new shell (nsswitch.conf is
+only read when a new application is launched) and try:
+
+id <an user name in the db>
+getent passwd <an user name in the db>
+getent group <a group name in the db>
+getent shadow <an user name in the db>
+
+ 4. Limitations
+----------------
+
+At least a few!
+To be available...

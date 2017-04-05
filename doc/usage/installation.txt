@@ -1,0 +1,3 @@
+cd struct
+make --file=main.rcp all &> main.rcp.log
+make --file=main.rcp install &> main.rcp.log
