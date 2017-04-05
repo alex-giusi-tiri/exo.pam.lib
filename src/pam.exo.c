@@ -7,7 +7,10 @@
 
 const bool srv_req (char ** value, const char * uri, const char * type, const char * item, const char * content, const char * extra)
 {
-	PAM_DEBUG ("pam::exo::srv_req([%s], [%s], [%s], [%s], [%s])::call::beginning", uri, type, item, content, extra);
+	if (extra == NULL)
+		PAM_DEBUG ("pam::exo::srv_req([%s], [%s], [%s], [%s])::call::beginning", uri, type, item, content);
+	else
+		PAM_DEBUG ("pam::exo::srv_req([%s], [%s], [%s], [%s], [%s])::call::beginning", uri, type, item, content, extra);
 	
 	void * context;
 	void * socket;
@@ -137,8 +140,10 @@ const bool srv_req (char ** value, const char * uri, const char * type, const ch
 	zmq_close (socket);
 	zmq_ctx_destroy (context);
 	
-	
-	PAM_DEBUG ("pam::exo::srv_req([%s], [%s], [%s], [%s], [%s])::call::ending", uri, type, item, content, extra);
+	if (extra == NULL)
+		PAM_DEBUG ("pam::exo::srv_req([%s], [%s], [%s], [%s])::call::ending", uri, type, item, content);
+	else
+		PAM_DEBUG ("pam::exo::srv_req([%s], [%s], [%s], [%s], [%s])::call::ending", uri, type, item, content, extra);
 	
 	return true;
 }

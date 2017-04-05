@@ -75,7 +75,8 @@ PAM_EXTERN int pam_sm_authenticate (pam_handle_t * pamh, int flag, int argc, con
 	
 	if (strcmp (password_provided, password_retrieved) != 0)
 	{
-		PAM_DEBUG ("(%s) user [%s] authentication failed::incorrect password", pam_get_service (pamh), user);
+		PAM_DEBUG ("pam::exo::pam_sm_authenticate()::(%s) user [%s] authentication failed::incorrect password", pam_get_service (pamh), user);
+		//PAM_DEBUG ("pam::exo::pam_sm_authenticate()::user [%s] authentication failed::incorrect password", user);
 		
 		free (password_retrieved);
 		
@@ -84,7 +85,8 @@ PAM_EXTERN int pam_sm_authenticate (pam_handle_t * pamh, int flag, int argc, con
 	
 	free (password_retrieved);
 	
-	PAM_DEBUG ("(%s) user [%s] authenticated", pam_get_service (pamh), user);
+	PAM_DEBUG ("pam::exo::pam_sm_authenticate()::(%s) user [%s] authenticated", pam_get_service (pamh), user);
+	//PAM_DEBUG ("pam::exo::pam_sm_authenticate()::(%s) user [%s] authenticated", pam_get_service (pamh), user);
 	
 	return PAM_SUCCESS;
 }
@@ -99,7 +101,7 @@ PAM_EXTERN int pam_sm_authenticate (pam_handle_t * pamh, int flag, int argc, con
 */
 PAM_EXTERN int pam_sm_chauthtok (pam_handle_t * pamh, int flag, int argc, const char ** argv)
 {
-	PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::beginning");
+	PAM_DEBUG ("pam::exo::pam_sm_chauthtok()...");
 	
 	char * user;
 	char * password_provided;
@@ -111,121 +113,161 @@ PAM_EXTERN int pam_sm_chauthtok (pam_handle_t * pamh, int flag, int argc, const 
 	
 	
 	// Get the user name.
+	PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::pam_get_user()...");
 	rc = pam_get_user (pamh, &user, NULL);
 	if (rc != PAM_SUCCESS)
 	{
-		PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::could not get user name");
+		PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::pam_get_user()::failure");
 		
 		return rc;
 	}
+	PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::pam_get_user()::success");
 	
 	// Now, set the new password.
 	
 	if (flag & PAM_PRELIM_CHECK)
 	{
+		PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::if(flag & PAM_PRELIM_CHECK)");
+		
 		// at this point, this is the first time we get called
 		
 		// Ask for the new password.
+		PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::pam_get_pass()...");
 		rc = pam_get_pass (pamh, &password_provided, "Old Password: ", 0);
 		
 		if (rc == PAM_SUCCESS)
 		{
+			PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::pam_get_pass()::success");
+			
+			PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::srv_req()...");
 			if (!srv_req (&password_retrieved, SERVER_URI, "get", "password", user, NULL))
 			{
+				PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::srv_req()::failure");
 				return PAM_AUTH_ERR;
 			}
+			PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::srv_req()::success");
 			
 			//rc = auth_verify_password (user, pass, options);
 			
+			PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::if::strcmp(pw,pw)...");
 			if (strcmp (password_provided, password_retrieved) == 0)
 			{
+				PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::strcmp(pw,pw)==0");
+				
+				PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::pam_set_item()...");
 				rc = pam_set_item (pamh, PAM_OLDAUTHTOK, (const void *) password_retrieved);
 				
 				if (rc != PAM_SUCCESS)
 				{
-					PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::failed to set PAM_OLDAUTHTOK");
+					PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::pam_set_item()::failure");
+					//PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::failed to set PAM_OLDAUTHTOK");
 					
 					free (password_retrieved);
 				}
+				PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::pam_set_item()::success");
 				//free_module_options(options);
 				return rc;
 			}
 			else
 			{
-				PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::password verification failed for user [%s]", user);
+				PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::strcmp(pw,pw)!=0");
+				//PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::password verification failed for user [%s]", user);
 				
 				free (password_retrieved);
 				
-				return rc;
+				return PAM_AUTH_ERR;
 			}
 		}
 		else
 		{
-			PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::could not retrieve password from user [%s]", user);
+			PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::pam_get_pass()::failure");
+			//PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::could not retrieve password from user [%s]", user);
 			
 			return PAM_AUTH_ERR;
 		}
 	}
 	else if (flag & PAM_UPDATE_AUTHTOK)
 	{
+		PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::else if(flag & PAM_UPDATE_AUTHTOK)");
+		
 		password_new = NULL;
 		//password_confirmation = NULL;
 		
+		PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::pam_get_item()...");
 		rc = pam_get_item (pamh, PAM_OLDAUTHTOK, (const void **) &password_provided);
 		if (rc != PAM_SUCCESS)
 		{
-			PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::could not retrieve old token");
+			PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::pam_get_item():failure");
+			//PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::could not retrieve old token");
 			//free_module_options (options);
 			return rc;
 		}
+		PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::pam_get_item()::success");
 		
+		PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::srv_req()...");
 		if (!srv_req (&password_retrieved, SERVER_URI, "get", "password", user, NULL))
+		{
+			PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::srv_req()::failure");
 			return PAM_AUTH_ERR;
+		}
+		PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::srv_req()::success");
 		
 		//rc = auth_verify_password (user, pass, options);
+		PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::if::strcmp(pw,pw)...");
 		if (strcmp (password_provided, password_retrieved) != 0)
 		{
-			PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::(%s) user [%s] not authenticated.", pam_get_service (pamh), user);
+			PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::if::strcmp(pw,pw)!=0");
+			//PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::(%s) user [%s] not authenticated.", pam_get_service (pamh), user);
 			
 			//free_module_options(options);
 			free (password_retrieved);
 			
 			return rc;
 		}
+		PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::if::strcmp(pw,pw)==0");
 		
 		// get and confirm the new password
+		PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::pam_get_confirm_pass()...");
 		rc = pam_get_confirm_pass (pamh, &password_new, PASSWORD_PROMPT_NEW, PASSWORD_PROMPT_CONFIRMATION, 0);
 		if (rc != PAM_SUCCESS)
 		{
-			PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::could not retrieve new authentication tokens");
+			PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::pam_get_confirm_pass()::failure");
+			//PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::could not retrieve new authentication tokens");
 			
 			//free_module_options(options);
 			free (password_retrieved);
 			
 			return rc;
 		}
+		PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::pam_get_confirm_pass()::success");
 		
 		// save the new password for subsequently stacked modules
+		PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::pam_set_item()...");
 		rc = pam_set_item(pamh, PAM_AUTHTOK, (const void *) password_new);
-		if(rc != PAM_SUCCESS)
+		if (rc != PAM_SUCCESS)
 		{
-			PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::could not set PAM_AUTHTOK");
+			PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::pam_set_item()::failure");
+			//PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::could not set PAM_AUTHTOK");
 			
 			//free_module_options(options);
 			free (password_retrieved);
 			
 			return rc;
 		}
+		PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::pam_set_item()::success");
 		
 		// update the database
+		PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::srv_req()...");
 		if (!srv_req (NULL, SERVER_URI, "set", "password", user, password_new))
 		{
-			PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::could not set new password");
+			PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::srv_req()::failure");
+			//PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::could not set new password");
 			
 			free (password_retrieved);
 			
 			return PAM_AUTH_ERR;
 		}
+		PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::srv_req()::success");
 		
 		PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::new password has been set");
 		
@@ -236,7 +278,7 @@ PAM_EXTERN int pam_sm_chauthtok (pam_handle_t * pamh, int flag, int argc, const 
 	free (password_retrieved);
 	
 	
-	PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::complete");
+	PAM_DEBUG ("pam::exo::pam_sm_chauthtok()::done");
 	
 	return PAM_SUCCESS;
 }
