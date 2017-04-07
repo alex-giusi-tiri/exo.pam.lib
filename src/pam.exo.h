@@ -37,6 +37,8 @@
 const bool/* success*/ srv_req (char **/* returned value*/, const char */* URI of request*/, const char */* type of request*/, const char */* item*/, const char */* content*/, const char */* extra*/);
 //const bool/* success*/ srv_req_set (const char */* URI of request*/, const char */* user name*/, const char */* item name*/, const char */* content of request*/);
 
+//const char * srv_rx (void */* socket*/);
+
 #define PASSWORD_PROMPT                 "Password: "
 #define PASSWORD_PROMPT_NEW             "New Password: "
 #define PASSWORD_PROMPT_CONFIRMATION    "New Password Confirmation: "

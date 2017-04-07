@@ -55,24 +55,29 @@ PAM_EXTERN int pam_sm_authenticate (pam_handle_t * pamh, int flag, int argc, con
 	//context = zmq_ctx_new ();
 	//socket = zmq_socket (context, ZMQ_DEALER);
 	
-	PAM_DEBUG ("pam::exo::pam_sm_authenticate()::get::user");
 	
 	// Get the user name.
+	PAM_DEBUG ("pam::exo::pam_sm_authenticate()::pam_get_user()");
 	rc = pam_get_user (pamh, &user, NULL);
 	if (rc != PAM_SUCCESS)
 		return rc;
 	
 	// Get the password from the user.
+	PAM_DEBUG ("pam::exo::pam_sm_authenticate()::pam_get_pass()");
 	rc = pam_get_pass (pamh, &password_provided, PASSWORD_PROMPT, 0);
 	if (rc != PAM_SUCCESS)
 		return rc;
 	
 	// Get the password from the server.
+	PAM_DEBUG ("pam::exo::pam_sm_authenticate()::srv_req()");
 	if (!srv_req (&password_retrieved, SERVER_URI, "get", "password", user, NULL))
 	{
+		PAM_DEBUG ("pam::exo::pam_sm_authenticate()::srv_req()::failure");
 		return PAM_AUTH_ERR;
 	}
+	PAM_DEBUG ("pam::exo::pam_sm_authenticate()::srv_req()::success");
 	
+	PAM_DEBUG ("pam::exo::pam_sm_authenticate()::strcmp(password_provided, password_retrieved))");
 	if (strcmp (password_provided, password_retrieved) != 0)
 	{
 		PAM_DEBUG ("pam::exo::pam_sm_authenticate()::(%s) user [%s] authentication failed::incorrect password", pam_get_service (pamh), user);
@@ -82,6 +87,7 @@ PAM_EXTERN int pam_sm_authenticate (pam_handle_t * pamh, int flag, int argc, con
 		
 		return PAM_AUTH_ERR;
 	}
+	PAM_DEBUG ("pam::exo::pam_sm_authenticate()::(%s) user [%s] authentication succeeded::correct password", pam_get_service (pamh), user);
 	
 	free (password_retrieved);
 	
